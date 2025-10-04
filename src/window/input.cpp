@@ -4,14 +4,35 @@
 #include "debug/Logger.hpp"
 #include "util/stringutil.hpp"
 
+#include <SDL3/SDL_mouse.h>
+
 debug::Logger logger("input");
 
+static std::unordered_map<int, std::string> keynames {};
+static std::unordered_map<int, std::string> buttonsnames {};
+
+static std::unordered_map<std::string, int> mousecodes {
+    {"left", SDL_BUTTON_LEFT},
+    {"right", SDL_BUTTON_RIGHT},
+    {"middle", SDL_BUTTON_MIDDLE},
+    {"side1", SDL_BUTTON_X1},
+    {"side2", SDL_BUTTON_X2},
+};
+
 std::string input_util::get_name(Mousecode code) {
-    return {};
+    const auto found = buttonsnames.find(static_cast<int>(code));
+    if (found == buttonsnames.end()) {
+        return "unknown";
+    }
+    return found->second;
 }
 
 std::string input_util::get_name(Keycode code) {
-    return {};
+    const auto found = keynames.find(static_cast<int>(code));
+    if (found == keynames.end()) {
+        return "unknown";
+    }
+    return found->second;
 }
 
 void Binding::reset(InputType type, int code) {
@@ -27,16 +48,26 @@ void Binding::reset(Mousecode code) {
     reset(InputType::MOUSE, static_cast<int>(code));
 }
 
-void input_util::initialize() {
-
-}
-
-Keycode input_util::keycode_from(const std::string& name) {
-    return {};
-}
-
 Mousecode input_util::mousecode_from(const std::string& name) {
     return {};
+}
+
+void input_util::initialize() {
+    // for (int i = 0; i <= 9; i++) {
+    //     keycodes[std::to_string(i)] = GLFW_KEY_0 + i;
+    // }
+    // for (int i = 0; i < 25; i++) {
+    //     keycodes["f" + std::to_string(i + 1)] = GLFW_KEY_F1 + i;
+    // }
+    // for (char i = 'a'; i <= 'z'; i++) {
+    //     keycodes[std::string({i})] = GLFW_KEY_A - 'a' + i;
+    // }
+    // for (const auto& entry : keycodes) {
+    //     keynames[entry.second] = entry.first;
+    // }
+    for (const auto& entry : mousecodes) {
+        buttonsnames[entry.second] = entry.first;
+    }
 }
 
 std::string input_util::to_string(Mousecode code) {
@@ -49,9 +80,6 @@ std::string input_util::to_string(Mousecode code) {
             return "MMB";
         case Mousecode::BUTTON_4:
         case Mousecode::BUTTON_5:
-        case Mousecode::BUTTON_6:
-        case Mousecode::BUTTON_7:
-        case Mousecode::BUTTON_8:
             return "XButton " + std::to_string(
                                     static_cast<int>(code) -
                                     static_cast<int>(Mousecode::BUTTON_3)
