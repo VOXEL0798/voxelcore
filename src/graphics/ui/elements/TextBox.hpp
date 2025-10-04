@@ -52,7 +52,6 @@ namespace gui {
         int textInitX = 0;
         /// @brief Last time of the caret was moved (used for blink animation)
         double caretLastMove = 0.0;
-        Font* font = nullptr;
 
         // Note: selection does not include markup
         size_t selectionStart = 0;
@@ -70,6 +69,8 @@ namespace gui {
         void stepRight(bool shiftPressed, bool breakSelection);
         void stepDefaultDown(bool shiftPressed, bool breakSelection);
         void stepDefaultUp(bool shiftPressed, bool breakSelection);
+
+        void onTab(bool shiftPressed);
 
         size_t normalizeIndex(int index);
 
