@@ -34,7 +34,7 @@
 #include "util/platform.hpp"
 #include "window/Camera.hpp"
 #include "window/input.hpp"
-#include "window/Window.hpp"
+#include "window/window.hpp"
 #include "world/Level.hpp"
 #include "Mainloop.hpp"
 #include "ServerMainloop.hpp"

@@ -10,7 +10,7 @@
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Framebuffer.hpp"
 #include "graphics/core/DrawContext.hpp"
-#include "window/Window.hpp"
+#include "window/window.hpp"
 #include "../GUI.hpp"
 
 // TODO: remove

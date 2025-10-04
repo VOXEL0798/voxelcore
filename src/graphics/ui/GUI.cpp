@@ -20,7 +20,7 @@
 #include "graphics/core/Shader.hpp"
 #include "gui_util.hpp"
 #include "window/Camera.hpp"
-#include "window/Window.hpp"
+#include "window/window.hpp"
 #include "window/input.hpp"
 
 #include <algorithm>
@@ -166,7 +166,7 @@ void GUI::actMouse(float delta, const CursorState& cursor) {
     }
 
     if (hover) {
-        for (Mousecode code : MOUSECODES_ALL) {
+        for (Mousecode code : mousecodes_all) {
             if (input.jclicked(code)) {
                 hover->clicked(code);
             }

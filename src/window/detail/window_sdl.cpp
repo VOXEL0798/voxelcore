@@ -1,0 +1,290 @@
+#include "window/detail/window_sdl.hpp"
+
+#include <GL/gl.h>
+#include <GL/glew.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_timer.h>
+#include <SDL3/SDL_version.h>
+#include <SDL3/SDL_video.h>
+
+#include <memory>
+#include <string>
+#include <unordered_set>
+
+#include "debug/Logger.hpp"
+#include "graphics/core/ImageData.hpp"
+#include "graphics/core/Texture.hpp"
+#include "settings.hpp"
+#include "window/detail/input_sdl.hpp"
+
+static debug::Logger logger("window");
+
+static std::unordered_set<std::string> supported_gl_extensions;
+static void init_gl_extensions_list() {
+    GLint numExtensions = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
+    for (GLint i = 0; i < numExtensions; ++i) {
+        const char *ext =
+            reinterpret_cast<const char *>(glGetStringi(GL_EXTENSIONS, i));
+        if (ext) {
+            supported_gl_extensions.insert(ext);
+        }
+    }
+}
+
+static bool is_gl_extension_supported(const char *extension) {
+    if (!extension || !*extension) {
+        return false;
+    }
+    return supported_gl_extensions.find(extension) !=
+           supported_gl_extensions.end();
+}
+
+static const char *gl_error_name(int error) {
+    switch (error) {
+        case GL_DEBUG_TYPE_ERROR:
+            return "ERROR";
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+            return "DEPRECATED_BEHAVIOR";
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+            return "UNDEFINED_BEHAVIOR";
+        case GL_DEBUG_TYPE_PORTABILITY:
+            return "PORTABILITY";
+        case GL_DEBUG_TYPE_PERFORMANCE:
+            return "PERFORMANCE";
+        case GL_DEBUG_TYPE_OTHER:
+            return "OTHER";
+    }
+    return "UNKNOWN";
+}
+
+static const char *gl_severity_name(int severity) {
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_LOW:
+            return "LOW";
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            return "MEDIUM";
+        case GL_DEBUG_SEVERITY_HIGH:
+            return "HIGH";
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            return "NOTIFICATION";
+    }
+    return "UNKNOWN";
+}
+
+static void GLAPIENTRY gl_message_callback(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar *message,
+    const void *userParam
+) {
+    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+        return;
+    }
+    if (!ENGINE_DEBUG_BUILD && severity != GL_DEBUG_SEVERITY_HIGH) {
+        return;
+    }
+    logger.warning() << "GL:" << gl_error_name(type) << ":"
+                     << gl_severity_name(severity) << ": " << message;
+}
+
+static bool initialize_gl(int width, int height) {
+    glewExperimental = GL_TRUE;
+
+    GLenum glewErr = glewInit();
+    if (glewErr != GLEW_OK) {
+        if (glewErr == GLEW_ERROR_NO_GLX_DISPLAY) {
+            // see issue #240
+            logger.warning()
+                << "glewInit() returned GLEW_ERROR_NO_GLX_DISPLAY; ignored";
+        } else {
+            logger.error() << "failed to initialize GLEW:\n"
+                           << glewGetErrorString(glewErr);
+            return true;
+        }
+    }
+
+#ifndef __APPLE__
+    glEnable(GL_DEBUG_OUTPUT);
+    // glDebugMessageCallback(gl_message_callback, 0);
+#endif
+
+    glViewport(0, 0, width, height);
+    glClearColor(0.0f, 0.0f, 0.0f, 1);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    GLint maxTextureSize[1] {static_cast<GLint>(Texture::MAX_RESOLUTION)};
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, maxTextureSize);
+    if (maxTextureSize[0] > 0) {
+        Texture::MAX_RESOLUTION = maxTextureSize[0];
+        logger.info() << "max texture size is " << Texture::MAX_RESOLUTION;
+    }
+
+    const GLubyte *vendor = glGetString(GL_VENDOR);
+    const GLubyte *renderer = glGetString(GL_RENDERER);
+    logger.info() << "GL Vendor: " << reinterpret_cast<const char *>(vendor);
+    logger.info() << "GL Renderer: "
+                  << reinterpret_cast<const char *>(renderer);
+    logger.info() << "SDL: " << SDL_GetVersion();
+    return false;
+}
+
+window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS)) {
+        logger.error() << "failed to initialize SDL: " << SDL_GetError();
+        isSuccessfull = false;
+        return;
+    }
+
+    SDL_WindowFlags flags = SDL_WINDOW_OPENGL;
+
+    if (settings->fullscreen.get()) {
+        flags |= SDL_WINDOW_FULLSCREEN;
+    }
+
+    window = SDL_CreateWindow(
+        title.c_str(), settings->width.get(), settings->height.get(), flags
+    );
+    if (!window) {
+        logger.error() << "failed to create SDL Window: " << SDL_GetError();
+        isSuccessfull = false;
+        return;
+    }
+    context = SDL_GL_CreateContext(window);
+    if (!context) {
+        logger.error() << "failed to create GL context: " << SDL_GetError();
+        isSuccessfull = false;
+        return;
+    }
+}
+window_sdl::~window_sdl() {
+    SDL_DestroyWindow(window);
+    if (!SDL_GL_DestroyContext(context)) {
+        logger.error() << "Cant destroy gl context: " << SDL_GetError();
+    }
+}
+
+void window_sdl::swapBuffers() const noexcept {
+    if (!SDL_GL_SwapWindow(window)) [[unlikely]] {
+        logger.error() << "Cant swap buffer: " << SDL_GetError();
+    }
+}
+bool window_sdl::isMaximized() const {
+    return maximized;
+}
+bool window_sdl::isFocused() const {
+    return focused;
+}
+bool window_sdl::isIconified() const {
+    return iconified;
+}
+
+bool window_sdl::isShouldClose() const {
+    return toClose;
+}
+void window_sdl::setShouldClose(bool flag) {
+    toClose = flag;
+}
+
+void window_sdl::setCursor(CursorShape shape) {
+}
+void window_sdl::toggleFullscreen() {
+    fullscreen = !fullscreen;
+    if (SDL_SetWindowFullscreen(window, fullscreen)) {
+        logger.error() << "Cant toggle fullscreen window: " << SDL_GetError();
+    }
+}
+bool window_sdl::isFullscreen() const {
+    return fullscreen;
+}
+
+void window_sdl::setIcon(const ImageData *image) {
+    if (image == nullptr) {
+        logger.error() << "Image is nullptr";
+        return;
+    }
+
+    SDL_Surface *iconSurface = SDL_CreateSurface(
+        image->getWidth(), image->getHeight(), SDL_PIXELFORMAT_RGBA32
+    );
+
+    if (!iconSurface) {
+        logger.error() << "Failed to create surface for app icon: "
+                       << SDL_GetError();
+        return;
+    }
+
+    memcpy(
+        iconSurface->pixels,
+        image->getData(),
+        image->getWidth() * image->getHeight() * 4
+    );
+
+    if (!SDL_SetWindowIcon(window, iconSurface)) {
+        logger.error() << "Failed to set icon: " << SDL_GetError();
+    }
+
+    SDL_DestroySurface(iconSurface);
+}
+
+void window_sdl::pushScissor(glm::vec4 area) {
+}
+void window_sdl::popScissor() {
+}
+void window_sdl::resetScissor() {
+}
+
+double window_sdl::time() {
+    return static_cast<double>(SDL_GetTicks()) / 1000;
+}
+
+void window_sdl::setFramerate(int framerate) {
+    /*todo*/
+    if (!SDL_GL_SetSwapInterval(framerate)) {
+        logger.error() << "Failed to set framerate: "
+                       << SDL_GetError();
+}
+}
+
+// todo: move somewhere
+std::unique_ptr<ImageData> window_sdl::takeScreenshot() {
+    return {};
+}
+
+[[nodiscard]] bool window_sdl::isValid() const {
+    return isSuccessfull;
+}
+
+std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>> Window::initialize(
+    DisplaySettings *settings, std::string title
+) {
+    auto window = std::make_unique<window_sdl>(settings, title);
+    if (!window->isValid()) {
+        return {nullptr, nullptr};
+    }
+    auto input = std::make_unique<input_sdl>();
+
+    return {std::move(window), std::move(input)};
+}
+
+void display::clear() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void display::clearDepth() {
+    glClear(GL_DEPTH_BUFFER_BIT);
+}
+
+void display::setBgColor(glm::vec3 color) {
+    glClearColor(color.r, color.g, color.b, 1.0f);
+}
+
+void display::setBgColor(glm::vec4 color) {
+    glClearColor(color.r, color.g, color.b, color.a);
+}

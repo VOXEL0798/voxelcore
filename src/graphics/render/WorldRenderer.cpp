@@ -27,7 +27,7 @@
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/Chunks.hpp"
-#include "window/Window.hpp"
+#include "window/window.hpp"
 #include "world/Level.hpp"
 #include "world/LevelEvents.hpp"
 #include "world/World.hpp"

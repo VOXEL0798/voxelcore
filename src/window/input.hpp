@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <glm/vec2.hpp>
 
@@ -14,8 +15,8 @@ enum class BindType {
     REBIND = 1
 };
 
-/// @brief Represents glfw3 keycode values.
-enum class Keycode : int {
+/// @brief Represents sdl scancode values.
+enum class Keycode : std::int32_t {
     SPACE = 32,
     APOSTROPHE = 39,
     COMMA = 44,
@@ -120,7 +121,7 @@ enum class Mousecode : int {
     UNKNOWN = -1,
 };
 
-inline Mousecode MOUSECODES_ALL[] {
+inline Mousecode mousecodes_all[] {
     Mousecode::BUTTON_1,
     Mousecode::BUTTON_2,
     Mousecode::BUTTON_3,
@@ -128,7 +129,8 @@ inline Mousecode MOUSECODES_ALL[] {
     Mousecode::BUTTON_5,
     Mousecode::BUTTON_6,
     Mousecode::BUTTON_7,
-    Mousecode::BUTTON_8};
+    Mousecode::BUTTON_8
+};
 
 namespace input_util {
     void initialize();

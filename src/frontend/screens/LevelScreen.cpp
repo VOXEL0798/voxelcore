@@ -29,7 +29,7 @@
 #include "util/stringutil.hpp"
 #include "voxels/Chunks.hpp"
 #include "window/Camera.hpp"
-#include "window/Window.hpp"
+#include "window/window.hpp"
 #include "world/Level.hpp"
 #include "world/World.hpp"
 
