@@ -1,25 +1,29 @@
 #include "window/Window.hpp"
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <unordered_set>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_timer.h>
+#include <SDL3/SDL_version.h>
+#include <SDL3/SDL_video.h>
+#include <SDL3/SDL_clipboard.h>
 
-#include <chrono>
-#include <stack>
+#include <unordered_set>
 #include <vector>
+#include <stack>
 
 #include "debug/Logger.hpp"
 #include "graphics/core/ImageData.hpp"
 #include "graphics/core/Texture.hpp"
 #include "settings.hpp"
-#include "util/ObjectsKeeper.hpp"
 #include "util/platform.hpp"
 #include "window/input.hpp"
 
 static debug::Logger logger("window");
 
 static std::unordered_set<std::string> supported_gl_extensions;
-static void window_size_callback(GLFWwindow* window, int width, int height);
 
 static void init_gl_extensions_list() {
     GLint numExtensions = 0;
@@ -118,54 +122,15 @@ static bool initialize_gl(int width, int height) {
     const GLubyte* renderer = glGetString(GL_RENDERER);
     logger.info() << "GL Vendor: " << reinterpret_cast<const char*>(vendor);
     logger.info() << "GL Renderer: " << reinterpret_cast<const char*>(renderer);
-    logger.info() << "GLFW: " << glfwGetVersionString();
+    logger.info() << "SDL: " << SDL_GetVersion();
     return false;
 }
 
-static const char* glfw_error_name(int error) {
-    switch (error) {
-        case GLFW_NO_ERROR:
-            return "no error";
-        case GLFW_NOT_INITIALIZED:
-            return "not initialized";
-        case GLFW_NO_CURRENT_CONTEXT:
-            return "no current context";
-        case GLFW_INVALID_ENUM:
-            return "invalid enum";
-        case GLFW_INVALID_VALUE:
-            return "invalid value";
-        case GLFW_OUT_OF_MEMORY:
-            return "out of memory";
-        case GLFW_API_UNAVAILABLE:
-            return "api unavailable";
-        case GLFW_VERSION_UNAVAILABLE:
-            return "version unavailable";
-        case GLFW_PLATFORM_ERROR:
-            return "platform error";
-        case GLFW_FORMAT_UNAVAILABLE:
-            return "format unavailable";
-        case GLFW_NO_WINDOW_CONTEXT:
-            return "no window context";
-        default:
-            return "unknown error";
-    }
-}
-
-static void glfw_error_callback(int error, const char* description) {
-    auto logline = logger.error();
-    logline << "GLFW error [0x" << std::hex << error << " - "
-            << glfw_error_name(error) << "]";
-    if (description) {
-        logline << ": " << description;
-    }
-}
 
 inline constexpr short KEYS_BUFFER_SIZE = 1036;
 inline constexpr short MOUSE_KEYS_OFFSET = 1024;
 
-static GLFWcursor* standard_cursors[static_cast<int>(CursorShape::LAST) + 1] = {};
-
-class GLFWInput : public Input {
+class SDLInput : public Input {
 public:
     int scroll = 0;
     uint currentFrame = 0;
@@ -176,7 +141,7 @@ public:
     bool keys[KEYS_BUFFER_SIZE] {};
     std::unordered_map<Keycode, util::HandlersList<>> keyCallbacks;
 
-    GLFWInput(GLFWwindow* window)
+    SDLInput(SDL_Window* window)
         : window(window) {
     }
 
@@ -184,40 +149,55 @@ public:
         delta.x = 0.0f;
         delta.y = 0.0f;
         scroll = 0;
-        currentFrame++;
         codepoints.clear();
         pressedKeys.clear();
-        glfwPollEvents();
 
-        for (auto& [_, binding] : bindings.getAll()) {
-            if (!binding.enabled) {
-                binding.state = false;
-                continue;
-            }
-            binding.justChanged = false;
-    
-            bool newstate = false;
-            switch (binding.type) {
-                case InputType::KEYBOARD:
-                    newstate = pressed(static_cast<Keycode>(binding.code));
+        SDL_Event event;
+
+        while(SDL_PollEvent(&event))
+        {
+            switch (event.type) {
+                case SDL_EVENT_QUIT:
+                    // window->setShouldClose(true);
                     break;
-                case InputType::MOUSE:
-                    newstate = clicked(static_cast<Mousecode>(binding.code));
+                case SDL_EVENT_KEY_DOWN:
+                    break;
+                case SDL_EVENT_KEY_UP:
+                    break;
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                    break;
+                case SDL_EVENT_MOUSE_MOTION:
                     break;
             }
+        // for (auto& [_, binding] : bindings.getAll()) {
+        //     if (!binding.enabled) {
+        //         binding.state = false;
+        //         continue;
+        //     }
+        //     binding.justChanged = false;
     
-            if (newstate) {
-                if (!binding.state) {
-                    binding.state = true;
-                    binding.justChanged = true;
-                    binding.onactived.notify();
-                }
-            } else {
-                if (binding.state) {
-                    binding.state = false;
-                    binding.justChanged = true;
-                }
-            }
+        //     bool newstate = false;
+        //     switch (binding.type) {
+        //         case InputType::KEYBOARD:
+        //             newstate = pressed(static_cast<Keycode>(binding.code));
+        //             break;
+        //         case InputType::MOUSE:
+        //             newstate = clicked(static_cast<Mousecode>(binding.code));
+        //             break;
+        //     }
+    
+        //     if (newstate) {
+        //         if (!binding.state) {
+        //             binding.state = true;
+        //             binding.justChanged = true;
+        //             binding.onactived.notify();
+        //         }
+        //     } else {
+        //         if (binding.state) {
+        //             binding.state = false;
+        //             binding.justChanged = true;
+        //         }
+        //     }
         }
     }
 
@@ -242,11 +222,12 @@ public:
     }
 
     const char* getClipboardText() const override {
-        return glfwGetClipboardString(window);
+        /*todo free*/
+        return SDL_GetClipboardText();
     }
 
     void setClipboardText(const char* text) override {
-        glfwSetClipboardString(window, text);
+        SDL_SetClipboardText(text);
     }
 
     int getScroll() override {
@@ -286,11 +267,7 @@ public:
 
     void toggleCursor() override {
         cursorDrag = false;
-        if (cursorLocked) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
+        SDL_SetWindowMouseGrab(window, cursorLocked);
         cursorLocked = !cursorLocked;
     }
 
@@ -325,22 +302,24 @@ public:
         return codepoints;
     }
 private:
-    GLFWwindow* window;
+    SDL_Window* window;
     bool cursorLocked = false;
     bool cursorDrag = false;
     glm::vec2 delta;
     glm::vec2 cursor;
 };
-static_assert(!std::is_abstract<GLFWInput>());
+static_assert(!std::is_abstract<SDLInput>());
 
-class GLFWWindow : public Window {
+class WindowSdlImpl final : public Window {
 public:
-    GLFWInput& input;
+    SDLInput& input;
+    
     DisplaySettings* settings;
 
-    GLFWWindow(
-        GLFWInput& glfwInput,
-        GLFWwindow* window,
+    WindowSdlImpl(
+        SDLInput& glfwInput,
+        SDL_Window* window,
+        SDL_GLContext context,
         DisplaySettings* settings,
         int width,
         int height
@@ -348,22 +327,20 @@ public:
         : Window({width, height}),
           input(glfwInput),
           settings(settings),
-          window(window) {
+          window(window),
+          glcontext(context) {
     }
 
-    ~GLFWWindow() {
-        for (int i = 0; i <= static_cast<int>(CursorShape::LAST); i++) {
-            glfwDestroyCursor(standard_cursors[i]);
-        }
-        glfwTerminate();
+    ~WindowSdlImpl() override {
+        SDL_GL_DestroyContext(glcontext);
     }
 
     double time() override {
-        return glfwGetTime();
+        return SDL_GetTicks();
     }
 
     void swapBuffers() override {
-        glfwSwapBuffers(window);
+        SDL_GL_SwapWindow(window);
         resetScissor();
         if (framerate > 0) {
             auto elapsedTime = time() - prevSwap;
@@ -378,65 +355,44 @@ public:
     }
 
     bool isMaximized() const override {
-        return glfwGetWindowAttrib(window, GLFW_MAXIMIZED);
+        return (SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED) != 0;
     }
 
     bool isFocused() const override {
-        return glfwGetWindowAttrib(window, GLFW_FOCUSED);
+        Uint32 flags = SDL_GetWindowFlags(window);
+        return (flags & SDL_WINDOW_INPUT_FOCUS) != 0 || (flags & SDL_WINDOW_MOUSE_FOCUS) != 0;
     }
 
     bool isIconified() const override {
-        return glfwGetWindowAttrib(window, GLFW_ICONIFIED);
+        return (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) != 0;
     }
 
-    bool isShouldClose() const override {
-        return glfwWindowShouldClose(window);
+
+    bool isShouldClose() const override
+    {
+        return toClose;
     }
 
-    void setShouldClose(bool flag) override {
-        glfwSetWindowShouldClose(window, flag);
+    void setShouldClose(bool flag) override
+    {
+        toClose = flag;
     }
 
     void setCursor(CursorShape shape) override {
-        if (cursor == shape) {
-            return;
-        }
-        cursor = shape;
-        // NULL cursor is valid for GLFW
-        glfwSetCursor(window, standard_cursors[static_cast<int>(shape)]);
+    //     if (cursor == shape) {
+    //         return;
+    //     }
+    //     cursor = shape;
+    //     // NULL cursor is valid for GLFW
+    //     glfwSetCursor(window, standard_cursors[static_cast<int>(shape)]);
     }
 
     void toggleFullscreen() override {
         fullscreen = !fullscreen;
-    
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    
-        if (input.isCursorLocked()){
-            input.toggleCursor();
+
+        if (!SDL_SetWindowFullscreen(window, fullscreen)) {
+            // SDL_Log("Failed to toggle fullscreen: %s", SDL_GetError());
         }
-    
-        if (fullscreen) {
-            glfwGetWindowPos(window, &posX, &posY);
-            glfwSetWindowMonitor(
-                window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate
-            );
-        } else {
-            glfwSetWindowMonitor(
-                window,
-                nullptr,
-                posX,
-                posY,
-                settings->width.get(),
-                settings->height.get(),
-                GLFW_DONT_CARE
-            );
-            window_size_callback(window, settings->width.get(), settings->height.get());
-        }
-    
-        double xPos, yPos;
-        glfwGetCursorPos(window, &xPos, &yPos);
-        input.setCursorPosition(xPos, yPos);
     }
 
     bool isFullscreen() const override {
@@ -445,15 +401,32 @@ public:
 
     void setIcon(const ImageData* image) override {
         if (image == nullptr) {
-            glfwSetWindowIcon(window, 0, nullptr);
+            SDL_SetWindowIcon(window, nullptr);
             return;
         }
-        GLFWimage icon {
-            static_cast<int>(image->getWidth()),
-            static_cast<int>(image->getHeight()),
-            image->getData()};
-        glfwSetWindowIcon(window, 1, &icon);
+        
+        // Create SDL_Surface from ImageData
+        SDL_Surface* iconSurface = SDL_CreateSurface(
+            image->getWidth(),
+            image->getHeight(),
+            SDL_PIXELFORMAT_RGBA32  // Adjust format based on your ImageData
+        );
+        
+        if (!iconSurface) {
+            // SDL_Log("Failed to create surface for window icon: %s", SDL_GetError());
+            return;
+        }
+        
+        memcpy(iconSurface->pixels, image->getData(), 
+            image->getWidth() * image->getHeight() * 4);
+        
+        if (!SDL_SetWindowIcon(window, iconSurface)) {
+            // SDL_Log("Failed to set window icon: %s", SDL_GetError());
+        }
+        
+        SDL_DestroySurface(iconSurface);
     }
+
 
     void setSize(int width, int height) {
         glViewport(0, 0, width, height);
@@ -534,15 +507,17 @@ public:
 
     void setFramerate(int framerate) override {
         if ((framerate != -1) != (this->framerate != -1)) {
-            glfwSwapInterval(framerate == -1);
+            SDL_GL_SetSwapInterval(framerate == -1);
         }
         this->framerate = framerate;
     }
     
 private:
-    GLFWwindow* window;
+    SDL_Window* window;
+    SDL_GLContext glcontext;
     CursorShape cursor = CursorShape::ARROW;
     bool fullscreen = false;
+    bool toClose = false;
     int framerate = -1;
     std::stack<glm::vec4> scissorStack;
     glm::vec4 scissorArea;
@@ -550,86 +525,85 @@ private:
     int posX = 0;
     int posY = 0;
 };
-static_assert(!std::is_abstract<GLFWWindow>());
 
-static void mouse_button_callback(GLFWwindow* window, int button, int action, int) {
-    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    handler->input.onMouseCallback(button, action == GLFW_PRESS);
-}
+// static void mouse_button_callback(GLFWwindow* window, int button, int action, int) {
+//     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+//     handler->input.onMouseCallback(button, action == GLFW_PRESS);
+// }
 
-static void character_callback(GLFWwindow* window, unsigned int codepoint) {
-    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    handler->input.codepoints.push_back(codepoint);
-}
+// static void character_callback(GLFWwindow* window, unsigned int codepoint) {
+//     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+//     handler->input.codepoints.push_back(codepoint);
+// }
 
-static void key_callback(
-    GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/
-) {
-    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    auto& input = handler->input;
-    if (key == GLFW_KEY_UNKNOWN) {
-        return;
-    }
-    if (action == GLFW_PRESS) {
-        input.onKeyCallback(key, true);
+// static void key_callback(
+//     GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/
+// ) {
+//     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+//     auto& input = handler->input;
+//     if (key == GLFW_KEY_UNKNOWN) {
+//         return;
+//     }
+//     if (action == GLFW_PRESS) {
+//         input.onKeyCallback(key, true);
         
-    } else if (action == GLFW_RELEASE) {
-        input.onKeyCallback(key, false);
-    } else if (action == GLFW_REPEAT) {
-        input.onKeyCallback(key, true);
-    }
-}
+//     } else if (action == GLFW_RELEASE) {
+//         input.onKeyCallback(key, false);
+//     } else if (action == GLFW_REPEAT) {
+//         input.onKeyCallback(key, true);
+//     }
+// }
 
-static void window_size_callback(GLFWwindow* window, int width, int height) {
-    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if (width && height) {
-        handler->setSize(width, height);
-    }
-    handler->resetScissor();
-}
+// static void window_size_callback(GLFWwindow* window, int width, int height) {
+//     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+//     if (width && height) {
+//         handler->setSize(width, height);
+//     }
+//     handler->resetScissor();
+// }
 
-static void scroll_callback(GLFWwindow* window, double, double yoffset) {
-    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    handler->input.scroll += yoffset;
-}
+// static void scroll_callback(GLFWwindow* window, double, double yoffset) {
+//     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+//     handler->input.scroll += yoffset;
+// }
 
-static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
-    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    handler->input.setCursorPosition(xpos, ypos);
-}
+// static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
+//     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+//     handler->input.setCursorPosition(xpos, ypos);
+// }
 
-static void iconify_callback(GLFWwindow* window, int iconified) {
-    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if (handler->isFullscreen() && iconified == 0) {
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor(
-            window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate
-        );
-    }
-}
+// static void iconify_callback(GLFWwindow* window, int iconified) {
+//     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+//     if (handler->isFullscreen() && iconified == 0) {
+//         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+//         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+//         glfwSetWindowMonitor(
+//             window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate
+//         );
+//     }
+// }
 
-static void create_standard_cursors() {
-    for (int i = 0; i <= static_cast<int>(CursorShape::LAST); i++) {
-        int cursor = GLFW_ARROW_CURSOR + i;
-        // GLFW 3.3 does not support some cursors
-        if (GLFW_VERSION_MAJOR <= 3 && GLFW_VERSION_MINOR <= 3 &&
-            cursor > GLFW_VRESIZE_CURSOR) {
-            break;
-        }
-        standard_cursors[i] = glfwCreateStandardCursor(cursor);
-    }
-}
+// static void create_standard_cursors() {
+//     for (int i = 0; i <= static_cast<int>(CursorShape::LAST); i++) {
+//         int cursor = GLFW_ARROW_CURSOR + i;
+//         // GLFW 3.3 does not support some cursors
+//         if (GLFW_VERSION_MAJOR <= 3 && GLFW_VERSION_MINOR <= 3 &&
+//             cursor > GLFW_VRESIZE_CURSOR) {
+//             break;
+//         }
+//         standard_cursors[i] = glfwCreateStandardCursor(cursor);
+//     }
+// }
 
-static void setup_callbacks(GLFWwindow* window) {
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetCursorPosCallback(window, cursor_pos_callback);
-    glfwSetWindowSizeCallback(window, window_size_callback);
-    glfwSetCharCallback(window, character_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-    glfwSetWindowIconifyCallback(window, iconify_callback);
-}
+// static void setup_callbacks(GLFWwindow* window) {
+//     glfwSetKeyCallback(window, key_callback);
+//     glfwSetMouseButtonCallback(window, mouse_button_callback);
+//     glfwSetCursorPosCallback(window, cursor_pos_callback);
+//     glfwSetWindowSizeCallback(window, window_size_callback);
+//     glfwSetCharCallback(window, character_callback);
+//     glfwSetScrollCallback(window, scroll_callback);
+//     glfwSetWindowIconifyCallback(window, iconify_callback);
+// }
 
 std::tuple<
     std::unique_ptr<Window>, 
@@ -638,35 +612,34 @@ std::tuple<
     int width = settings->width.get();
     int height = settings->height.get();
 
-    glfwSetErrorCallback(glfw_error_callback);
-    if (glfwInit() == GLFW_FALSE) {
-        logger.error() << "failed to initialize GLFW";
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS)) {
+        logger.error() << "failed to initialize SDL";
         return {nullptr, nullptr};
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
-    // see issue #465
-    glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GL_FALSE);
-#endif
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+// #if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+//     // see issue #465
+//     // glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GL_FALSE);
+// #endif
 #ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    // glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
 #else
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 #endif
-    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-    glfwWindowHint(GLFW_SAMPLES, settings->samples.get());
+    // glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+    // glfwWindowHint(GLFW_SAMPLES, settings->samples.get());
 
-    auto window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+    auto window = SDL_CreateWindow(title.c_str(), width, height, SDL_WINDOW_OPENGL);
     if (window == nullptr) {
         logger.error() << "failed to create GLFW window";
-        glfwTerminate();
         return {nullptr, nullptr};
     }
-    glfwMakeContextCurrent(window);
+    SDL_GLContext glcontext = SDL_GL_CreateContext(window);
+    SDL_GL_MakeCurrent(window, glcontext);
 
     glewExperimental = GL_TRUE;
 
@@ -679,7 +652,7 @@ std::tuple<
         } else {
             logger.error() << "failed to initialize GLEW:\n"
                            << glewGetErrorString(glewErr);
-            glfwTerminate();
+            SDL_DestroyWindow(window);
             return {nullptr, nullptr};
         }
     }
@@ -704,26 +677,25 @@ std::tuple<
         Texture::MAX_RESOLUTION = maxTextureSize[0];
         logger.info() << "max texture size is " << Texture::MAX_RESOLUTION;
     }
-    setup_callbacks(window);
+    // setup_callbacks(window);
     
-    glfwSwapInterval(1);
+    SDL_GL_SetSwapInterval(1);
     input_util::initialize();
-    create_standard_cursors();
+    // create_standard_cursors();
 
     glm::vec2 scale;
-    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &scale.x, &scale.y);
+    // SDL_SetDisplayContentScale(SDL_GetPrimaryDisplay(), &scale.x, &scale.y);
     logger.info() << "monitor content scale: " << scale.x << "x" << scale.y;
 
     if (initialize_gl(width, height)) {
-        glfwTerminate();
         return {nullptr, nullptr};
     }
 
-    auto inputPtr = std::make_unique<GLFWInput>(window);
-    auto windowPtr = std::make_unique<GLFWWindow>(
-        *inputPtr, window, settings, width, height
+    auto inputPtr = std::make_unique<SDLInput>(window);
+    auto windowPtr = std::make_unique<WindowSdlImpl>(
+        *inputPtr, window, glcontext, settings, width, height
     );
-    glfwSetWindowUserPointer(window, windowPtr.get());
+    // glfwSetWindowUserPointer(window, windowPtr.get());
     return {std::move(windowPtr), std::move(inputPtr)};
 }
 

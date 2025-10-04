@@ -18,7 +18,7 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(CURL REQUIRED)
-find_package(glfw3 REQUIRED)
+find_package(SDL3 REQUIRED)
 if(NOT APPLE)
     find_package(EnTT REQUIRED)
 endif()
@@ -65,7 +65,7 @@ target_include_directories(VoxelEngineSrc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
     VoxelEngineSrc
-    PRIVATE glfw
+    PRIVATE SDL3::SDL3
             OpenGL::GL
             GLEW::GLEW
             ZLIB::ZLIB
