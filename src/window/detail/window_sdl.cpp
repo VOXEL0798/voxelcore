@@ -1,6 +1,5 @@
 #include "window/detail/window_sdl.hpp"
 
-#include <GL/gl.h>
 #include <GL/glew.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
@@ -105,13 +104,17 @@ static bool initialize_gl(int width, int height) {
         } else {
             logger.error() << "failed to initialize GLEW:\n"
                            << glewGetErrorString(glewErr);
-            return true;
+            return false;
         }
     }
 
+    init_gl_extensions_list();
+
 #ifndef __APPLE__
-    glEnable(GL_DEBUG_OUTPUT);
-    // glDebugMessageCallback(gl_message_callback, 0);
+    if (is_gl_extension_supported("GL_KHR_debug")) {
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback(gl_message_callback, nullptr);
+    }
 #endif
 
     glViewport(0, 0, width, height);
@@ -132,7 +135,7 @@ static bool initialize_gl(int width, int height) {
     logger.info() << "GL Renderer: "
                   << reinterpret_cast<const char *>(renderer);
     logger.info() << "SDL: " << SDL_GetVersion();
-    return false;
+    return true;
 }
 
 window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
@@ -142,7 +145,7 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
         return;
     }
 
-    SDL_WindowFlags flags = SDL_WINDOW_OPENGL;
+    SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
 
     if (settings->fullscreen.get()) {
         flags |= SDL_WINDOW_FULLSCREEN;
@@ -156,17 +159,58 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
         isSuccessfull = false;
         return;
     }
+
+    int width = 0;
+    int height = 0;
+
+    if (!SDL_GetWindowSize(window, &width, &height)) {
+        logger.error() << "failed to get window size: " << SDL_GetError();
+        isSuccessfull = false;
+        return;
+    }
+
+    size = {width, height};
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+#ifdef __APPLE__
+    SDL_GL_SetAttribute(
+        SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE
+    );
+    SDL_GL_SetAttribute(
+        SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
+    );
+    // ??
+    // SDL_GL_SetAttribute(SDL_WINDOW_ALLOW_HIGHDPI, false);
+#endif
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, settings->samples.get());
+
     context = SDL_GL_CreateContext(window);
     if (!context) {
         logger.error() << "failed to create GL context: " << SDL_GetError();
         isSuccessfull = false;
         return;
     }
+
+    if (!initialize_gl(width, height)) {
+        logger.error() << "failed to init GL: " << SDL_GetError();
+        return;
+    }
+
+    if (!SDL_GL_SetSwapInterval(1)) {
+        logger.error() << "failed to set vsync: " << SDL_GetError();
+        isSuccessfull = false;
+        return;
+    }
 }
 window_sdl::~window_sdl() {
-    SDL_DestroyWindow(window);
-    if (!SDL_GL_DestroyContext(context)) {
-        logger.error() << "Cant destroy gl context: " << SDL_GetError();
+    if (window) {
+        SDL_DestroyWindow(window);
+    }
+    if (context) {
+        if (!SDL_GL_DestroyContext(context)) {
+            logger.error() << "Cant destroy gl context: " << SDL_GetError();
+        }
     }
 }
 
@@ -176,13 +220,15 @@ void window_sdl::swapBuffers() const noexcept {
     }
 }
 bool window_sdl::isMaximized() const {
-    return maximized;
+    return (SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED) != 0;
 }
 bool window_sdl::isFocused() const {
-    return focused;
+    Uint32 flags = SDL_GetWindowFlags(window);
+    return (flags & SDL_WINDOW_INPUT_FOCUS) != 0 ||
+           (flags & SDL_WINDOW_MOUSE_FOCUS) != 0;
 }
 bool window_sdl::isIconified() const {
-    return iconified;
+    return (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) != 0;
 }
 
 bool window_sdl::isShouldClose() const {
@@ -246,10 +292,9 @@ double window_sdl::time() {
 
 void window_sdl::setFramerate(int framerate) {
     /*todo*/
-    if (!SDL_GL_SetSwapInterval(framerate)) {
-        logger.error() << "Failed to set framerate: "
-                       << SDL_GetError();
-}
+    if (!SDL_GL_SetSwapInterval(1)) {
+        logger.error() << "Failed to set framerate: " << SDL_GetError();
+    }
 }
 
 // todo: move somewhere

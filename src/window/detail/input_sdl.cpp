@@ -20,6 +20,10 @@ input_sdl::input_sdl() {
 }
 
 void input_sdl::pollEvents() {
+    /* static */ SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+    
+    }
     // delta.x = 0.0f;
     // delta.y = 0.0f;
     // scroll = 0;
