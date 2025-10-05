@@ -344,12 +344,12 @@ void window_sdl::resetScissor() {
 }
 
 double window_sdl::time() {
-    return static_cast<double>(SDL_GetTicks()) / 1000;
+    return static_cast<double>(SDL_GetTicksNS()) / 1'000'000'000;
 }
 
 void window_sdl::setFramerate(int framerate) {
     /*todo*/
-    if (!SDL_GL_SetSwapInterval(1)) {
+    if (!SDL_GL_SetSwapInterval(framerate)) {
         logger.error() << "Failed to set framerate: " << SDL_GetError();
     }
 }

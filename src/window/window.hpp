@@ -43,6 +43,9 @@ public:
     virtual const glm::ivec2& getSize() const {
         return size;
     }
+    virtual void setSize(const glm::ivec2& s) {
+        size = std::move(s);
+    }
 
     static std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>>
     initialize(DisplaySettings* settings, std::string title);

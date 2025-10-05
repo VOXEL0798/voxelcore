@@ -89,6 +89,7 @@ void input_sdl::pollEvents() {
                 cursor = {event.motion.x, event.motion.y};
                 break;
             case SDL_EVENT_WINDOW_RESIZED:
+                window.setSize({event.window.data1, event.window.data2});
                 break;
             case SDL_EVENT_TEXT_INPUT:
                 std::vector<char> vec(

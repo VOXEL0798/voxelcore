@@ -8,7 +8,6 @@
 
 debug::Logger logger("input");
 
-static std::unordered_map<int, std::string> keynames {};
 static std::unordered_map<int, std::string> buttonsnames {};
 
 static std::unordered_map<std::string, int> mousecodes {
@@ -18,22 +17,6 @@ static std::unordered_map<std::string, int> mousecodes {
     {"side1", SDL_BUTTON_X1},
     {"side2", SDL_BUTTON_X2},
 };
-
-std::string input_util::get_name(Mousecode code) {
-    const auto found = buttonsnames.find(static_cast<int>(code));
-    if (found == buttonsnames.end()) {
-        return "unknown";
-    }
-    return found->second;
-}
-
-std::string input_util::get_name(Keycode code) {
-    const auto found = keynames.find(static_cast<int>(code));
-    if (found == keynames.end()) {
-        return "unknown";
-    }
-    return found->second;
-}
 
 void Binding::reset(InputType type, int code) {
     this->type = type;
@@ -49,7 +32,11 @@ void Binding::reset(Mousecode code) {
 }
 
 Mousecode input_util::mousecode_from(const std::string& name) {
-    return {};
+    const auto& found = mousecodes.find(name);
+    if (found == mousecodes.end()) {
+        return Mousecode::UNKNOWN;
+    }
+    return static_cast<Mousecode>(found->second);
 }
 
 void input_util::initialize() {
@@ -139,12 +126,12 @@ std::string Bindings::write() const {
             case InputType::KEYBOARD:
                 value =
                     "key:" +
-                    input_util::get_name(static_cast<Keycode>(binding.code));
+                    input_util::to_string(static_cast<Keycode>(binding.code));
                 break;
             case InputType::MOUSE:
                 value =
                     "mouse:" +
-                    input_util::get_name(static_cast<Mousecode>(binding.code));
+                    input_util::to_string(static_cast<Mousecode>(binding.code));
                 break;
             default:
                 throw std::runtime_error("unsupported control type");
