@@ -39,13 +39,13 @@ jobs:
           git clone https://github.com/libsdl-org/SDL.git
           cd SDL
           cmake -G "Ninja Multi-Config" -B.build .
-          cmake --build .build --config Release -j
+          cmake --build .build --config Release -j 4
           sudo cmake --install .build --config Release
           cd ..
       - name: Configure
         run: cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON
       - name: Build
-        run: cmake --build build -t install -j
+        run: cmake --build build -t install -j 4
       - name: Run tests
         run: ctest --test-dir build
       - name: Run engine tests
