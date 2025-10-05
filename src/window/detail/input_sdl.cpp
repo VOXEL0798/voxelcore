@@ -6,6 +6,7 @@
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_video.h>
 
 #include <cstring>
@@ -17,13 +18,15 @@
 static debug::Logger logger("input");
 
 std::string input_util::to_string(Keycode code) {
-    int icode_repr = static_cast<int>(code);
-    const char* name = SDL_GetKeyName(icode_repr);
+    auto icode_repr = static_cast<SDL_Scancode>(code);
+    const char* name = SDL_GetKeyName(
+        SDL_GetKeyFromScancode(icode_repr, SDL_KMOD_NONE, false)
+    );
     return std::string(name);
 }
 
 Keycode input_util::keycode_from(const std::string& name) {
-    return static_cast<Keycode>(SDL_GetKeyFromName(name.c_str()));
+    return static_cast<Keycode>(SDL_GetScancodeFromName(name.c_str()));
 }
 
 input_sdl::input_sdl(window_sdl& window) : window(window) {
@@ -79,7 +82,7 @@ void input_sdl::pollEvents() {
                 break;
             case SDL_EVENT_MOUSE_MOTION:
                 if (cursorDrag) {
-                    delta += glm::vec2{event.motion.xrel, event.motion.yrel};
+                    delta += glm::vec2 {event.motion.xrel, event.motion.yrel};
                 } else {
                     cursorDrag = true;
                 }
