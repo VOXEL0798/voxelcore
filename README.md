@@ -34,8 +34,12 @@ apt-get install entt-devel SDL3-devel libGLEW-devel libglm-devel libpng-devel li
 #### Debian based distros
 
 ```sh
-sudo apt install libsdl3-dev libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
+sudo apt install libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
 ```
+
+> [!WARNING]
+> You need manualy prebuild and install SDL3 lib.
+
 
 > [!TIP]
 > CMake missing `LUA_INCLUDE_DIR` and `LUA_LIBRARIES` fix:
