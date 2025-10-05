@@ -8,6 +8,8 @@
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
 
+#include <cstring>
+
 #include "debug/Logger.hpp"
 #include "window/detail/window_sdl.hpp"
 #include "window/input.hpp"
@@ -17,17 +19,17 @@ static debug::Logger logger("input");
 std::string input_util::to_string(Keycode code) {
     int icode_repr = static_cast<int>(code);
     const char* name = SDL_GetKeyName(icode_repr);
-    logger.info() << icode_repr << ": " << name;
     return std::string(name);
 }
 
 Keycode input_util::keycode_from(const std::string& name) {
-    logger.info() << name << ": " << SDL_GetKeyFromName(name.c_str());
     return static_cast<Keycode>(SDL_GetKeyFromName(name.c_str()));
 }
 
 input_sdl::input_sdl(window_sdl& window) : window(window) {
     input_util::initialize();
+    // We should always get char stream (maybe)
+    SDL_StartTextInput(window.getSdlWindow());
 }
 
 void input_sdl::pollEvents() {
@@ -47,7 +49,6 @@ void input_sdl::pollEvents() {
                 window.setShouldClose(true);
                 break;
             case SDL_EVENT_KEY_DOWN:
-                logger.info() << "Keyboard button: " << event.key.scancode;
                 prevPressed = keys[event.key.scancode];
                 keys[event.key.scancode] = true;
                 frames[event.key.scancode] = currentFrame;
@@ -58,10 +59,6 @@ void input_sdl::pollEvents() {
                 pressedKeys.push_back(static_cast<Keycode>(event.key.scancode));
                 break;
             case SDL_EVENT_KEY_UP:
-                if (event.key.scancode >= keys_buffer_size) {
-                    // Win key return 1073742051
-                    break;
-                }
                 keys[event.key.scancode] = false;
                 frames[event.key.scancode] = currentFrame;
                 break;
@@ -81,11 +78,23 @@ void input_sdl::pollEvents() {
                 frames[event.button.button + mouse_keys_offset] = currentFrame;
                 break;
             case SDL_EVENT_MOUSE_MOTION:
+                if (cursorDrag) {
+                    delta += glm::vec2{event.motion.xrel, event.motion.yrel};
+                } else {
+                    cursorDrag = true;
+                }
                 cursor = {event.motion.x, event.motion.y};
-                delta = {event.motion.xrel, event.motion.yrel};
                 break;
             case SDL_EVENT_WINDOW_RESIZED:
                 break;
+            case SDL_EVENT_TEXT_INPUT:
+                std::vector<char> vec(
+                    event.text.text,
+                    event.text.text + std::strlen(event.text.text)
+                );
+                std::copy(
+                    vec.begin(), vec.end(), std::back_inserter(codepoints)
+                );
         }
     }
     for (auto& [_, binding] : bindings.getAll()) {
@@ -136,7 +145,6 @@ bool input_sdl::pressed(Keycode key) const {
     if (keycode < 0 || keycode >= keys_buffer_size) {
         return false;
     }
-    if (keys[keycode]) logger.info() << "kek";
     return keys[keycode];
 }
 bool input_sdl::jpressed(Keycode keycode) const {
@@ -164,8 +172,8 @@ bool input_sdl::isCursorLocked() const {
 
 void input_sdl::toggleCursor() {
     cursorDrag = false;
-    SDL_SetWindowMouseGrab(window.getSdlWindow(), cursorLocked);
     cursorLocked = !cursorLocked;
+    SDL_SetWindowRelativeMouseMode(window.getSdlWindow(), cursorLocked);
 }
 
 Bindings& input_sdl::getBindings() {
@@ -184,6 +192,6 @@ const std::vector<Keycode>& input_sdl::getPressedKeys() const {
     return pressedKeys;
 }
 
-const std::vector<uint>& input_sdl::getCodepoints() const {
+const std::vector<char>& input_sdl::getCodepoints() const {
     return codepoints;
 }
