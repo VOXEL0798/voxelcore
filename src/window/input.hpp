@@ -15,14 +15,14 @@ enum class BindType { BIND = 0, REBIND = 1 };
 
 /// @brief Represents sdl scancode values.
 enum class Keycode : std::int32_t {
-    SPACE = 0x00000020u,
-    APOSTROPHE = 0x00000027u,
-    COMMA = 0x0000002cu,
-    MINUS = 0x0000002du,
-    PERIOD = 0x0000002eu,
-    SLASH = 0x0000002fu,
-    NUM_0 = 0x40000059u,
-    NUM_1,
+    SPACE = 44,
+    APOSTROPHE = 52,
+    COMMA = 54,
+    MINUS = 45,
+    PERIOD = 55,
+    SLASH = 56,
+    NUM_0 = 39,
+    NUM_1 = 30,
     NUM_2,
     NUM_3,
     NUM_4,
@@ -31,9 +31,9 @@ enum class Keycode : std::int32_t {
     NUM_7,
     NUM_8,
     NUM_9,
-    SEMICOLON = 0x0000003bu,
-    EQUAL = 0x0000003du,
-    A = 0x00000061u,
+    SEMICOLON = 51,
+    EQUAL = 46,
+    A = 4,
     B,
     C,
     D,
@@ -59,29 +59,29 @@ enum class Keycode : std::int32_t {
     X,
     Y,
     Z,
-    LEFT_BRACKET = 0x0000005bu,
-    BACKSLASH = 0x0000005cu,
-    RIGHT_BRACKET = 0x0000005du,
-    GRAVE_ACCENT = 0x00000060u,
-    ESCAPE = 0x0000001bu,
-    ENTER = 0x0000000du,
-    TAB = 0x00000009u,
-    BACKSPACE = 0x00000008u,
-    INSERT = 0x40000049u,
-    DELETE = 0x0000007fu,
-    LEFT = 0x40000050u,
-    RIGHT = 0x4000004fu,
-    DOWN = 0x40000051u,
-    UP = 0x40000052u,
-    PAGE_UP = 0x4000004bu,
-    PAGE_DOWN = 0x4000004eu,
-    HOME = 0x4000004au,
-    END = 0x4000004du,
-    CAPS_LOCK = 0x40000039u,
-    NUM_LOCK = 0x40000053u,
-    PRINT_SCREEN = 0x40000046u,
-    PAUSE = 0x40000048u,
-    F1 = 0x4000003au,
+    LEFT_BRACKET = 47,
+    BACKSLASH = 49,
+    RIGHT_BRACKET = 48,
+    GRAVE_ACCENT = 53,
+    ESCAPE = 41,
+    ENTER = 40,
+    TAB = 43,
+    BACKSPACE = 42,
+    INSERT = 73,
+    DELETE = 76,
+    LEFT = 80,
+    RIGHT = 79,
+    DOWN = 81,
+    UP = 82,
+    PAGE_UP = 75,
+    PAGE_DOWN = 78,
+    HOME = 74,
+    END = 77,
+    CAPS_LOCK = 57,
+    NUM_LOCK = 83,
+    PRINT_SCREEN = 70,
+    PAUSE = 72,
+    F1 = 58,
     F2,
     F3,
     F4,
@@ -93,27 +93,27 @@ enum class Keycode : std::int32_t {
     F10,
     F11,
     F12,
-    LEFT_SHIFT = 0x400000e1u,
-    LEFT_CONTROL = 0x400000e0u,
-    LEFT_ALT = 0x400000e2u,
-    // LEFT_SUPER = 343,
-    RIGHT_SHIFT = 0x400000e5u,
-    RIGHT_CONTROL = 0x400000e4u,
-    RIGHT_ALT = 0x400000e6u,
-    // RIGHT_SUPER = 347,
-    MENU = 0x40000076u,
-    UNKNOWN = 0x00000000u
+    LEFT_SHIFT = 225,
+    LEFT_CONTROL = 224,
+    LEFT_ALT = 226,
+    LEFT_SUPER = 227,
+    RIGHT_SHIFT = 229,
+    RIGHT_CONTROL = 228,
+    RIGHT_ALT = 230,
+    RIGHT_SUPER = 231,
+    MENU = 118,
+    UNKNOWN = 0
 };
 
 /// @brief Represents sdl mouse button IDs.
 /// @details There is a subset of sdl mouse button IDs.
 enum class Mousecode : int {
-    BUTTON_1 = 0,  // Left mouse button
-    BUTTON_2 = 1,  // Right mouse button
-    BUTTON_3 = 2,  // Middle mouse button
-    BUTTON_4 = 3,  // Side mouse button 1
-    BUTTON_5 = 4,  // Side mouse button 2
-    UNKNOWN = -1,
+    BUTTON_1 = 1,  // Left mouse button
+    BUTTON_2 = 2,  // Right mouse button
+    BUTTON_3 = 3,  // Middle mouse button
+    BUTTON_4 = 4,  // Side mouse button 1
+    BUTTON_5 = 5,  // Side mouse button 2
+    UNKNOWN = 0,
 };
 
 inline Mousecode mousecodes_all[] {

@@ -13,6 +13,7 @@ public:
     window_sdl &operator=(window_sdl &&) = default;
 
     void swapBuffers() const noexcept override;
+
     bool isMaximized() const override;
     bool isFocused() const override;
     bool isIconified() const override;
@@ -38,6 +39,7 @@ public:
     std::unique_ptr<ImageData> takeScreenshot() override;
 
     [[nodiscard]] bool isValid() const override;
+    [[nodiscard]] SDL_Window* getSdlWindow() const;
 private:
     bool isSuccessfull = true;
     bool maximized = false;

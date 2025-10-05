@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
+#include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
@@ -239,6 +240,62 @@ void window_sdl::setShouldClose(bool flag) {
 }
 
 void window_sdl::setCursor(CursorShape shape) {
+    SDL_Cursor* cursor;
+    switch (shape) {
+        case CursorShape::ARROW:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_DEFAULT
+            );
+            break;
+        case CursorShape::TEXT:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_TEXT
+            );
+            break;
+        case CursorShape::CROSSHAIR:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_CROSSHAIR
+            );
+            break;
+        case CursorShape::POINTER:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_POINTER
+            );
+            break;
+        case CursorShape::EW_RESIZE:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_EW_RESIZE
+            );
+            break;
+        case CursorShape::NS_RESIZE:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_NS_RESIZE
+            );
+            break;
+        case CursorShape::NWSE_RESIZE:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_NWSE_RESIZE
+            );
+            break;
+        case CursorShape::NESW_RESIZE:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_NESW_RESIZE
+            );
+            break;
+        case CursorShape::ALL_RESIZE:
+            // ??
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_NWSE_RESIZE
+            );
+            break;
+        case CursorShape::NOT_ALLOWED:
+            cursor = SDL_CreateSystemCursor(
+                SDL_SystemCursor::SDL_SYSTEM_CURSOR_NOT_ALLOWED
+            );
+            break;
+            SDL_SetCursor(cursor);
+            SDL_DestroyCursor(cursor);
+    }
 }
 void window_sdl::toggleFullscreen() {
     fullscreen = !fullscreen;
@@ -305,6 +362,9 @@ std::unique_ptr<ImageData> window_sdl::takeScreenshot() {
 [[nodiscard]] bool window_sdl::isValid() const {
     return isSuccessfull;
 }
+[[nodiscard]] SDL_Window *window_sdl::getSdlWindow() const {
+    return window;
+}
 
 std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>> Window::initialize(
     DisplaySettings *settings, std::string title
@@ -313,7 +373,7 @@ std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>> Window::initialize(
     if (!window->isValid()) {
         return {nullptr, nullptr};
     }
-    auto input = std::make_unique<input_sdl>();
+    auto input = std::make_unique<input_sdl>(*window);
 
     return {std::move(window), std::move(input)};
 }

@@ -1,16 +1,17 @@
 #include <SDL3/SDL_keycode.h>
-#include "window/input.hpp"
 
+#include "window/input.hpp"
 #include "window/window.hpp"
 
-struct SDL_Window;
+struct window_sdl;
 
 class input_sdl final : public Input {
 public:
-    inline static constexpr short keys_buffer_size = 1036;
-    inline static constexpr short mouse_keys_offset = 1024;
+    inline static constexpr short mouse_keys_offset = 512;
+    inline static constexpr short keys_buffer_size =
+        mouse_keys_offset + sizeof(mousecodes_all) / sizeof(mousecodes_all[0]);
 
-    input_sdl();
+    input_sdl(window_sdl& window);
 
     void pollEvents() override;
 
@@ -51,4 +52,6 @@ private:
     std::vector<uint> codepoints;
     std::vector<Keycode> pressedKeys;
     std::unordered_map<Keycode, util::HandlersList<>> keyCallbacks;
+
+    window_sdl& window;
 };

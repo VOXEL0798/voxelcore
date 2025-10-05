@@ -6,8 +6,10 @@
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_video.h>
 
 #include "debug/Logger.hpp"
+#include "window/detail/window_sdl.hpp"
 #include "window/input.hpp"
 
 static debug::Logger logger("input");
@@ -24,7 +26,7 @@ Keycode input_util::keycode_from(const std::string& name) {
     return static_cast<Keycode>(SDL_GetKeyFromName(name.c_str()));
 }
 
-input_sdl::input_sdl() {
+input_sdl::input_sdl(window_sdl& window) : window(window) {
     input_util::initialize();
 }
 
@@ -42,28 +44,26 @@ void input_sdl::pollEvents() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_EVENT_QUIT:
+                window.setShouldClose(true);
                 break;
             case SDL_EVENT_KEY_DOWN:
-                logger.info() << "Keyboard button: " << event.key.key;
-                if (event.key.key >= keys_buffer_size) {
-                    // Win key return 1073742051
-                    break;
-                }
-                prevPressed = keys[event.key.key];
-                keys[event.key.key] = true;
-                frames[event.key.key] = currentFrame;
+                logger.info() << "Keyboard button: " << event.key.scancode;
+                prevPressed = keys[event.key.scancode];
+                keys[event.key.scancode] = true;
+                frames[event.key.scancode] = currentFrame;
                 if (!prevPressed) {
-                    keyCallbacks[static_cast<Keycode>(event.key.key)].notify();
+                    keyCallbacks[static_cast<Keycode>(event.key.scancode)]
+                        .notify();
                 }
-                pressedKeys.push_back(static_cast<Keycode>(event.key.key));
+                pressedKeys.push_back(static_cast<Keycode>(event.key.scancode));
                 break;
             case SDL_EVENT_KEY_UP:
-                if (event.key.key >= keys_buffer_size) {
+                if (event.key.scancode >= keys_buffer_size) {
                     // Win key return 1073742051
                     break;
                 }
-                keys[event.key.key] = false;
-                frames[event.key.key] = currentFrame;
+                keys[event.key.scancode] = false;
+                frames[event.key.scancode] = currentFrame;
                 break;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
                 prevPressed = keys[event.button.button + mouse_keys_offset];
@@ -84,6 +84,8 @@ void input_sdl::pollEvents() {
                 cursor = {event.motion.x, event.motion.y};
                 delta = {event.motion.xrel, event.motion.yrel};
                 break;
+            case SDL_EVENT_WINDOW_RESIZED:
+                break;
         }
     }
     for (auto& [_, binding] : bindings.getAll()) {
@@ -102,7 +104,6 @@ void input_sdl::pollEvents() {
                 newstate = clicked(static_cast<Mousecode>(binding.code));
                 break;
         }
-
         if (newstate) {
             if (!binding.state) {
                 binding.state = true;
@@ -135,7 +136,7 @@ bool input_sdl::pressed(Keycode key) const {
     if (keycode < 0 || keycode >= keys_buffer_size) {
         return false;
     }
-    if (keys[keycode]) logger.info() << "lol";
+    if (keys[keycode]) logger.info() << "kek";
     return keys[keycode];
 }
 bool input_sdl::jpressed(Keycode keycode) const {
@@ -162,13 +163,9 @@ bool input_sdl::isCursorLocked() const {
 }
 
 void input_sdl::toggleCursor() {
-    // cursorDrag = false;
-    // if (cursorLocked) {
-    //     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    // } else {
-    //     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    // }
-    // cursorLocked = !cursorLocked;
+    cursorDrag = false;
+    SDL_SetWindowMouseGrab(window.getSdlWindow(), cursorLocked);
+    cursorLocked = !cursorLocked;
 }
 
 Bindings& input_sdl::getBindings() {
