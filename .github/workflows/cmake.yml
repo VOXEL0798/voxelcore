@@ -53,7 +53,7 @@ jobs:
           git clone https://github.com/libsdl-org/SDL.git
           cd SDL
           cmake -G "Ninja Multi-Config" -B.build .
-          cmake --build .build --config Release -j
+          cmake --build .build --config Release -j 4
           sudo cmake --install .build --config Release
           cd ..
 
@@ -68,7 +68,7 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: |
-        cmake --build ${{github.workspace}}/build --config ${{inputs.build_type}} -j
+        cmake --build ${{github.workspace}}/build --config ${{inputs.build_type}} -j 4
         mv ${{github.workspace}}/build/VoxelEngine VoxelEngine
     - name: Run tests
       if: ${{ inputs.run_tests }}
