@@ -124,6 +124,7 @@ inline Mousecode mousecodes_all[] {
     Mousecode::BUTTON_5,
 };
 
+
 namespace input_util {
     void initialize();
     Keycode keycode_from(const std::string& name);
@@ -133,6 +134,11 @@ namespace input_util {
     std::string to_string(Keycode code);
     /// @return Mouse button label by keycode
     std::string to_string(Mousecode code);
+    
+    /// @return Key name by keycode
+    std::string get_name(Keycode code);
+    /// @return Mouse button name by keycode
+    std::string get_name(Mousecode code);
 }
 
 enum class InputType {

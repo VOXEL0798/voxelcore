@@ -4,19 +4,8 @@
 #include "debug/Logger.hpp"
 #include "util/stringutil.hpp"
 
-#include <SDL3/SDL_mouse.h>
 
 debug::Logger logger("input");
-
-static std::unordered_map<int, std::string> buttonsnames {};
-
-static std::unordered_map<std::string, int> mousecodes {
-    {"left", SDL_BUTTON_LEFT},
-    {"right", SDL_BUTTON_RIGHT},
-    {"middle", SDL_BUTTON_MIDDLE},
-    {"side1", SDL_BUTTON_X1},
-    {"side2", SDL_BUTTON_X2},
-};
 
 void Binding::reset(InputType type, int code) {
     this->type = type;
@@ -29,32 +18,6 @@ void Binding::reset(Keycode code) {
 
 void Binding::reset(Mousecode code) {
     reset(InputType::MOUSE, static_cast<int>(code));
-}
-
-Mousecode input_util::mousecode_from(const std::string& name) {
-    const auto& found = mousecodes.find(name);
-    if (found == mousecodes.end()) {
-        return Mousecode::UNKNOWN;
-    }
-    return static_cast<Mousecode>(found->second);
-}
-
-void input_util::initialize() {
-    // for (int i = 0; i <= 9; i++) {
-    //     keycodes[std::to_string(i)] = GLFW_KEY_0 + i;
-    // }
-    // for (int i = 0; i < 25; i++) {
-    //     keycodes["f" + std::to_string(i + 1)] = GLFW_KEY_F1 + i;
-    // }
-    // for (char i = 'a'; i <= 'z'; i++) {
-    //     keycodes[std::string({i})] = GLFW_KEY_A - 'a' + i;
-    // }
-    // for (const auto& entry : keycodes) {
-    //     keynames[entry.second] = entry.first;
-    // }
-    for (const auto& entry : mousecodes) {
-        buttonsnames[entry.second] = entry.first;
-    }
 }
 
 std::string input_util::to_string(Mousecode code) {
@@ -126,12 +89,12 @@ std::string Bindings::write() const {
             case InputType::KEYBOARD:
                 value =
                     "key:" +
-                    input_util::to_string(static_cast<Keycode>(binding.code));
+                    input_util::get_name(static_cast<Keycode>(binding.code));
                 break;
             case InputType::MOUSE:
                 value =
                     "mouse:" +
-                    input_util::to_string(static_cast<Mousecode>(binding.code));
+                    input_util::get_name(static_cast<Mousecode>(binding.code));
                 break;
             default:
                 throw std::runtime_error("unsupported control type");
