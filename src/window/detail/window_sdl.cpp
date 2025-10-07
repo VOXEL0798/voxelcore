@@ -86,7 +86,7 @@ static void GLAPIENTRY gl_message_callback(
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
         return;
     }
-    if constexpr (!ENGINE_DEBUG_BUILD && severity != GL_DEBUG_SEVERITY_HIGH) {
+    if (!ENGINE_DEBUG_BUILD && severity != GL_DEBUG_SEVERITY_HIGH) {
         return;
     }
     logger.warning() << "GL:" << gl_error_name(type) << ":"

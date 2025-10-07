@@ -45,9 +45,6 @@ public:
     [[nodiscard]] SDL_Window *getSdlWindow() const;
 private:
     bool isSuccessfull = true;
-    bool maximized = false;
-    bool focused = false;
-    bool iconified = false;
     bool toClose = false;
     bool fullscreen = false;
 
