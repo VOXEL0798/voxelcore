@@ -177,6 +177,9 @@ void input_sdl::pollEvents() {
                 }
                 cursor = {event.motion.x, event.motion.y};
                 break;
+            case SDL_EVENT_MOUSE_WHEEL:
+                scroll += event.wheel.integer_y;
+                break;
             case SDL_EVENT_WINDOW_RESIZED:
                 window.setSize({event.window.data1, event.window.data2});
                 break;
