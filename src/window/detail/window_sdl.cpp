@@ -314,7 +314,7 @@ void window_sdl::setCursor(CursorShape shape) {
 }
 void window_sdl::toggleFullscreen() {
     fullscreen = !fullscreen;
-    if (SDL_SetWindowFullscreen(window, fullscreen)) {
+    if (!SDL_SetWindowFullscreen(window, fullscreen)) {
         logger.error() << "Cant toggle fullscreen window: " << SDL_GetError();
     }
 }
