@@ -146,7 +146,8 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
         return;
     }
 
-    SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+    SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+                            SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
     if (settings->fullscreen.get()) {
         flags |= SDL_WINDOW_FULLSCREEN;
@@ -185,6 +186,13 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
     // SDL_GL_SetAttribute(SDL_WINDOW_ALLOW_HIGHDPI, false);
 #endif
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, settings->samples.get());
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+    SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     context = SDL_GL_CreateContext(window);
     if (!context) {
@@ -203,6 +211,10 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
         isSuccessfull = false;
         return;
     }
+
+    float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+
+    logger.info() << "monitor content scale: " << scale;
 }
 window_sdl::~window_sdl() {
     if (window) {
@@ -215,10 +227,11 @@ window_sdl::~window_sdl() {
     }
 }
 
-void window_sdl::swapBuffers() const noexcept {
+void window_sdl::swapBuffers() noexcept {
     if (!SDL_GL_SwapWindow(window)) [[unlikely]] {  // C++20 needed
         logger.error() << "Cant swap buffer: " << SDL_GetError();
     }
+    resetScissor();
 }
 bool window_sdl::isMaximized() const {
     return (SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED) != 0;

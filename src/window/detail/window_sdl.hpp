@@ -15,7 +15,7 @@ public:
     window_sdl &operator=(const window_sdl &) = delete;
     window_sdl &operator=(window_sdl &&) = default;
 
-    void swapBuffers() const noexcept override;
+    void swapBuffers() noexcept override;
 
     bool isMaximized() const override;
     bool isFocused() const override;
@@ -51,9 +51,9 @@ private:
     bool toClose = false;
     bool fullscreen = false;
 
-    SDL_Window *window;
-    SDL_GLContext context;
+    SDL_Window *window = nullptr;
+    SDL_GLContext context = nullptr;
 
     std::stack<glm::vec4> scissorStack;
-    glm::vec4 scissorArea;
+    glm::vec4 scissorArea {};
 };

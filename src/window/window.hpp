@@ -12,7 +12,7 @@ struct DisplaySettings;
 class Window {
 public:
     virtual ~Window() = default;
-    virtual void swapBuffers() const noexcept = 0;
+    virtual void swapBuffers() noexcept = 0;
 
     virtual bool isMaximized() const = 0;
     virtual bool isFocused() const = 0;
