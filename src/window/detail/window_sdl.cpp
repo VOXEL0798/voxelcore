@@ -86,7 +86,7 @@ static void GLAPIENTRY gl_message_callback(
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
         return;
     }
-    if (!ENGINE_DEBUG_BUILD && severity != GL_DEBUG_SEVERITY_HIGH) {
+    if constexpr (!ENGINE_DEBUG_BUILD && severity != GL_DEBUG_SEVERITY_HIGH) {
         return;
     }
     logger.warning() << "GL:" << gl_error_name(type) << ":"
@@ -216,7 +216,7 @@ window_sdl::~window_sdl() {
 }
 
 void window_sdl::swapBuffers() const noexcept {
-    if (!SDL_GL_SwapWindow(window)) [[unlikely]] {
+    if (!SDL_GL_SwapWindow(window)) [[unlikely]] {  // C++20 needed
         logger.error() << "Cant swap buffer: " << SDL_GetError();
     }
 }
@@ -240,7 +240,7 @@ void window_sdl::setShouldClose(bool flag) {
 }
 
 void window_sdl::setCursor(CursorShape shape) {
-    SDL_Cursor* cursor;
+    SDL_Cursor *cursor = nullptr;
     switch (shape) {
         case CursorShape::ARROW:
             cursor = SDL_CreateSystemCursor(
@@ -293,8 +293,10 @@ void window_sdl::setCursor(CursorShape shape) {
                 SDL_SystemCursor::SDL_SYSTEM_CURSOR_NOT_ALLOWED
             );
             break;
-            SDL_SetCursor(cursor);
-            SDL_DestroyCursor(cursor);
+    }
+    if (cursor) {
+        SDL_SetCursor(cursor);
+        SDL_DestroyCursor(cursor);
     }
 }
 void window_sdl::toggleFullscreen() {
@@ -337,10 +339,60 @@ void window_sdl::setIcon(const ImageData *image) {
 }
 
 void window_sdl::pushScissor(glm::vec4 area) {
+    if (scissorStack.empty()) {
+        glEnable(GL_SCISSOR_TEST);
+    }
+    scissorStack.push(scissorArea);
+
+    area.z += glm::ceil(area.x);
+    area.w += glm::ceil(area.y);
+
+    area.x = glm::max(area.x, scissorArea.x);
+    area.y = glm::max(area.y, scissorArea.y);
+
+    area.z = glm::min(area.z, scissorArea.z);
+    area.w = glm::min(area.w, scissorArea.w);
+
+    if (area.z < 0.0f || area.w < 0.0f) {
+        glScissor(0, 0, 0, 0);
+    } else {
+        glScissor(
+            area.x,
+            size.y - area.w,
+            std::max(0, static_cast<int>(glm::ceil(area.z - area.x))),
+            std::max(0, static_cast<int>(glm::ceil(area.w - area.y)))
+        );
+    }
+    scissorArea = area;
 }
-void window_sdl::popScissor() {
-}
+
 void window_sdl::resetScissor() {
+    scissorArea = glm::vec4(0.0f, 0.0f, size.x, size.y);
+    scissorStack = std::stack<glm::vec4>();
+    glDisable(GL_SCISSOR_TEST);
+}
+
+void window_sdl::popScissor() {
+    if (scissorStack.empty()) {
+        logger.warning() << "extra Window::popScissor call";
+        return;
+    }
+    glm::vec4 area = scissorStack.top();
+    scissorStack.pop();
+    if (area.z < 0.0f || area.w < 0.0f) {
+        glScissor(0, 0, 0, 0);
+    } else {
+        glScissor(
+            area.x,
+            size.y - area.w,
+            std::max(0, static_cast<int>(area.z - area.x)),
+            std::max(0, static_cast<int>(area.w - area.y))
+        );
+    }
+    if (scissorStack.empty()) {
+        glDisable(GL_SCISSOR_TEST);
+    }
+    scissorArea = area;
 }
 
 double window_sdl::time() {

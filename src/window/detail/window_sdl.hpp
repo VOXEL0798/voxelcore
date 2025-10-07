@@ -1,7 +1,10 @@
 #include <SDL3/SDL_video.h>
+
+#include <stack>
+
 #include "window/window.hpp"
 
-struct  SDL_Window;
+struct SDL_Window;
 
 class window_sdl final : public Window {
 public:
@@ -39,7 +42,7 @@ public:
     std::unique_ptr<ImageData> takeScreenshot() override;
 
     [[nodiscard]] bool isValid() const override;
-    [[nodiscard]] SDL_Window* getSdlWindow() const;
+    [[nodiscard]] SDL_Window *getSdlWindow() const;
 private:
     bool isSuccessfull = true;
     bool maximized = false;
@@ -50,4 +53,7 @@ private:
 
     SDL_Window *window;
     SDL_GLContext context;
+
+    std::stack<glm::vec4> scissorStack;
+    glm::vec4 scissorArea;
 };

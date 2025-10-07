@@ -3,7 +3,7 @@
 #include "window/input.hpp"
 #include "window/window.hpp"
 
-struct window_sdl;
+class window_sdl;
 
 class input_sdl final : public Input {
 public:
