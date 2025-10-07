@@ -1,10 +1,9 @@
+#include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
 
 #include <stack>
 
 #include "window/window.hpp"
-
-struct SDL_Window;
 
 class window_sdl final : public Window {
 public:
@@ -49,6 +48,7 @@ private:
     bool fullscreen = false;
 
     SDL_Window *window = nullptr;
+    SDL_Renderer *renderer = nullptr;
     SDL_GLContext context = nullptr;
 
     std::stack<glm::vec4> scissorStack;

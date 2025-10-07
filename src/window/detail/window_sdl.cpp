@@ -4,6 +4,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_render.h>
+#include <SDL3/SDL_surface.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
@@ -211,6 +213,8 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
         isSuccessfull = false;
         return;
     }
+
+    renderer = SDL_CreateRenderer(window, "vc_main");
 
     float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
 
@@ -420,8 +424,15 @@ void window_sdl::setFramerate(int framerate) {
 }
 
 // todo: move somewhere
+// Possible do with SDL_RenderReadPixels
 std::unique_ptr<ImageData> window_sdl::takeScreenshot() {
-    return {};
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    auto data = std::make_unique<ubyte[]>(size.x * size.y * 3);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, data.get());
+    return std::make_unique<ImageData>(
+        ImageFormat::rgb888, size.x, size.y, data.release()
+    );
 }
 
 [[nodiscard]] bool window_sdl::isValid() const {
