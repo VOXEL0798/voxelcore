@@ -5,7 +5,7 @@
 #include "devtools/Project.hpp"
 #include "frontend/screens/MenuScreen.hpp"
 #include "frontend/screens/LevelScreen.hpp"
-#include "window/window.hpp"
+#include "window/Window.hpp"
 #include "world/Level.hpp"
 #include "graphics/ui/GUI.hpp"
 #include "graphics/ui/elements/Container.hpp"

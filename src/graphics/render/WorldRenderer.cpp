@@ -28,7 +28,7 @@
 #include "voxels/Chunk.hpp"
 #include "voxels/Chunks.hpp"
 #include "voxels/Pathfinding.hpp"
-#include "window/window.hpp"
+#include "window/Window.hpp"
 #include "world/Level.hpp"
 #include "world/LevelEvents.hpp"
 #include "world/World.hpp"

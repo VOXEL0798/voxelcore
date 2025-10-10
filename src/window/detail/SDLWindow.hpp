@@ -3,7 +3,7 @@
 
 #include <stack>
 
-#include "window/window.hpp"
+#include "window/Window.hpp"
 
 class SDLWindow final : public Window {
 public:

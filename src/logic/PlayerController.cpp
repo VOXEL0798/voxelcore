@@ -24,7 +24,7 @@
 #include "voxels/Chunks.hpp"
 #include "voxels/voxel.hpp"
 #include "window/Camera.hpp"
-#include "window/window.hpp"
+#include "window/Window.hpp"
 #include "window/input.hpp"
 #include "world/Level.hpp"
 

@@ -1,7 +1,7 @@
 #include <SDL3/SDL_keycode.h>
 
 #include "window/input.hpp"
-#include "window/window.hpp"
+#include "window/Window.hpp"
 
 class SDLWindow;
 
