@@ -5,13 +5,13 @@
 
 class SDLWindow;
 
-class input_sdl final : public Input {
+class SDLInput final : public Input {
 public:
     inline static constexpr short mouse_keys_offset = 512;
     inline static constexpr short keys_buffer_size =
         mouse_keys_offset + sizeof(mousecodes_all) / sizeof(mousecodes_all[0]);
 
-    input_sdl(SDLWindow& window);
+    SDLInput(SDLWindow& window);
 
     void pollEvents() override;
 

@@ -455,7 +455,7 @@ std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>> Window::initialize(
     if (!window->isValid()) {
         return {nullptr, nullptr};
     }
-    auto input = std::make_unique<input_sdl>(*window);
+    auto input = std::make_unique<SDLInput>(*window);
 
     return {std::move(window), std::move(input)};
 }

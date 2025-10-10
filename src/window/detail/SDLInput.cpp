@@ -119,13 +119,13 @@ Mousecode input_util::mousecode_from(const std::string& name) {
     return static_cast<Mousecode>(found->second);
 }
 
-input_sdl::input_sdl(SDLWindow& window) : window(window) {
+SDLInput::SDLInput(SDLWindow& window) : window(window) {
     input_util::initialize();
     // We should always get char stream (maybe)
     SDL_StartTextInput(window.getSdlWindow());
 }
 
-void input_sdl::pollEvents() {
+void SDLInput::pollEvents() {
     delta.x = 0.0f;
     delta.y = 0.0f;
     scroll = 0;
@@ -226,70 +226,70 @@ void input_sdl::pollEvents() {
     }
 }
 
-const char* input_sdl::getClipboardText() const {
+const char* SDLInput::getClipboardText() const {
     return SDL_GetClipboardText();
 }
 
-void input_sdl::setClipboardText(const char* text) {
+void SDLInput::setClipboardText(const char* text) {
     SDL_SetClipboardText(text);
 }
 
-int input_sdl::getScroll() {
+int SDLInput::getScroll() {
     return scroll;
 }
 
-bool input_sdl::pressed(Keycode key) const {
+bool SDLInput::pressed(Keycode key) const {
     int keycode = static_cast<int>(key);
     if (keycode < 0 || keycode >= keys_buffer_size) {
         return false;
     }
     return keys[keycode];
 }
-bool input_sdl::jpressed(Keycode keycode) const {
+bool SDLInput::jpressed(Keycode keycode) const {
     return pressed(keycode) &&
            frames[static_cast<int>(keycode)] == currentFrame;
 }
 
-bool input_sdl::clicked(Mousecode code) const {
+bool SDLInput::clicked(Mousecode code) const {
     return pressed(
         static_cast<Keycode>(mouse_keys_offset + static_cast<int>(code))
     );
 }
-bool input_sdl::jclicked(Mousecode code) const {
+bool SDLInput::jclicked(Mousecode code) const {
     return clicked(code) &&
            frames[static_cast<int>(code) + mouse_keys_offset] == currentFrame;
 }
 
-CursorState input_sdl::getCursor() const {
+CursorState SDLInput::getCursor() const {
     return {isCursorLocked(), cursor, delta};
 }
 
-bool input_sdl::isCursorLocked() const {
+bool SDLInput::isCursorLocked() const {
     return cursorLocked;
 }
 
-void input_sdl::toggleCursor() {
+void SDLInput::toggleCursor() {
     cursorDrag = false;
     cursorLocked = !cursorLocked;
     SDL_SetWindowRelativeMouseMode(window.getSdlWindow(), cursorLocked);
 }
 
-Bindings& input_sdl::getBindings() {
+Bindings& SDLInput::getBindings() {
     return bindings;
 }
 
-const Bindings& input_sdl::getBindings() const {
+const Bindings& SDLInput::getBindings() const {
     return bindings;
 }
 
-ObserverHandler input_sdl::addKeyCallback(Keycode key, KeyCallback callback) {
+ObserverHandler SDLInput::addKeyCallback(Keycode key, KeyCallback callback) {
     return keyCallbacks[key].add(std::move(callback));
 }
 
-const std::vector<Keycode>& input_sdl::getPressedKeys() const {
+const std::vector<Keycode>& SDLInput::getPressedKeys() const {
     return pressedKeys;
 }
 
-const std::vector<std::uint32_t>& input_sdl::getCodepoints() const {
+const std::vector<std::uint32_t>& SDLInput::getCodepoints() const {
     return codepoints;
 }
