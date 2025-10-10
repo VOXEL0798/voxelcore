@@ -49,6 +49,7 @@ private:
 
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
+    SDL_Cursor *cursor = nullptr;
     SDL_GLContext context = nullptr;
 
     std::stack<glm::vec4> scissorStack;

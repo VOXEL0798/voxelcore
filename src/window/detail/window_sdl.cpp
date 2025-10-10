@@ -257,7 +257,13 @@ void window_sdl::setShouldClose(bool flag) {
 }
 
 void window_sdl::setCursor(CursorShape shape) {
-    SDL_Cursor *cursor = nullptr;
+    // so it method called each frame, we always recreate cursor.
+    // Refactor it
+    if (cursor) {
+        SDL_DestroyCursor(cursor);
+        cursor = nullptr;
+    }
+
     switch (shape) {
         case CursorShape::ARROW:
             cursor = SDL_CreateSystemCursor(
@@ -313,13 +319,16 @@ void window_sdl::setCursor(CursorShape shape) {
     }
     if (cursor) {
         SDL_SetCursor(cursor);
-        SDL_DestroyCursor(cursor);
     }
 }
 void window_sdl::toggleFullscreen() {
     fullscreen = !fullscreen;
     if (!SDL_SetWindowFullscreen(window, fullscreen)) {
         logger.error() << "Cant toggle fullscreen window: " << SDL_GetError();
+    }
+    if (!SDL_SyncWindow(window)) {
+        logger.error() << "Cant sync window after toggle fullscreen: "
+                       << SDL_GetError();
     }
 }
 bool window_sdl::isFullscreen() const {
