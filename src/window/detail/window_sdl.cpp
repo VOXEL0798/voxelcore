@@ -142,7 +142,7 @@ static bool initialize_gl(int width, int height) {
 }
 
 window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         logger.error() << "failed to initialize SDL: " << SDL_GetError();
         isSuccessfull = false;
         return;
