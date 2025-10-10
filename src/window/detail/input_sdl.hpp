@@ -38,7 +38,7 @@ public:
     ObserverHandler addKeyCallback(Keycode key, KeyCallback callback) override;
 
     const std::vector<Keycode>& getPressedKeys() const override;
-    const std::vector<char>& getCodepoints() const override;
+    const std::vector<std::uint32_t>& getCodepoints() const override;
 private:
     glm::vec2 delta;
     glm::vec2 cursor;
@@ -49,7 +49,7 @@ private:
     bool cursorLocked = false;
     bool cursorDrag = false;
     Bindings bindings;
-    std::vector<char> codepoints;
+    std::vector<std::uint32_t> codepoints;
     std::vector<Keycode> pressedKeys;
     std::unordered_map<Keycode, util::HandlersList<>> keyCallbacks;
 

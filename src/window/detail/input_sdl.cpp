@@ -9,9 +9,10 @@
 #include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_video.h>
 
-#include <cstring>
+#include <string>
 
 #include "debug/Logger.hpp"
+#include "util/stringutil.hpp"
 #include "window/detail/window_sdl.hpp"
 #include "window/input.hpp"
 
@@ -132,6 +133,9 @@ void input_sdl::pollEvents() {
     codepoints.clear();
     pressedKeys.clear();
 
+    std::string text {};
+    uint size {};
+
     bool prevPressed = false;
 
     static SDL_Event event;
@@ -184,15 +188,13 @@ void input_sdl::pollEvents() {
                 window.setSize({event.window.data1, event.window.data2});
                 break;
             case SDL_EVENT_TEXT_INPUT:
-                std::vector<char> vec(
-                    event.text.text,
-                    event.text.text + std::strlen(event.text.text)
-                );
-                std::copy(
-                    vec.begin(), vec.end(), std::back_inserter(codepoints)
-                );
+                text += event.text.text;
         }
     }
+    if (!text.empty()) {
+        codepoints.push_back(util::decode_utf8(size, text.c_str()));
+    }
+
     for (auto& [_, binding] : bindings.getAll()) {
         if (!binding.enabled) {
             binding.state = false;
@@ -288,6 +290,6 @@ const std::vector<Keycode>& input_sdl::getPressedKeys() const {
     return pressedKeys;
 }
 
-const std::vector<char>& input_sdl::getCodepoints() const {
+const std::vector<std::uint32_t>& input_sdl::getCodepoints() const {
     return codepoints;
 }

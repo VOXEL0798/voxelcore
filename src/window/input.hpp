@@ -6,7 +6,6 @@
 
 #include "util/HandlersList.hpp"
 
-
 namespace dv {
     class value;
 }
@@ -124,7 +123,6 @@ inline Mousecode mousecodes_all[] {
     Mousecode::BUTTON_5,
 };
 
-
 namespace input_util {
     void initialize();
     Keycode keycode_from(const std::string& name);
@@ -134,7 +132,7 @@ namespace input_util {
     std::string to_string(Keycode code);
     /// @return Mouse button label by keycode
     std::string to_string(Mousecode code);
-    
+
     /// @return Key name by keycode
     std::string get_name(Keycode code);
     /// @return Mouse button name by keycode
@@ -282,7 +280,7 @@ public:
     ) = 0;
 
     virtual const std::vector<Keycode>& getPressedKeys() const = 0;
-    virtual const std::vector<char>& getCodepoints() const = 0;
+    virtual const std::vector<std::uint32_t>& getCodepoints() const = 0;
 
     ObserverHandler addCallback(const std::string& name, KeyCallback callback) {
         return getBindings().require(name).onactived.add(callback);
