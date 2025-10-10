@@ -149,7 +149,8 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
     }
 
     SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-                            SDL_WINDOW_HIGH_PIXEL_DENSITY;
+                            // For process mouse clicks when not focused
+                            SDL_WINDOW_NOT_FOCUSABLE;
 
     if (settings->fullscreen.get()) {
         flags |= SDL_WINDOW_FULLSCREEN;
@@ -184,8 +185,6 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
     SDL_GL_SetAttribute(
         SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
     );
-    // ??
-    // SDL_GL_SetAttribute(SDL_WINDOW_ALLOW_HIGHDPI, false);
 #endif
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, settings->samples.get());
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
