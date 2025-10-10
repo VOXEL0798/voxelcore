@@ -1,4 +1,4 @@
-#include "window/detail/input_sdl.hpp"
+#include "window/detail/SDLInput.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_clipboard.h>
@@ -13,7 +13,7 @@
 
 #include "debug/Logger.hpp"
 #include "util/stringutil.hpp"
-#include "window/detail/window_sdl.hpp"
+#include "window/detail/SDLWindow.hpp"
 #include "window/input.hpp"
 
 static debug::Logger logger("input");

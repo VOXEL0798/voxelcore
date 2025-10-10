@@ -1,4 +1,4 @@
-#include "window/detail/window_sdl.hpp"
+#include "window/detail/SDLWindow.hpp"
 
 #include <GL/glew.h>
 #include <SDL3/SDL.h>
@@ -18,7 +18,7 @@
 #include "graphics/core/ImageData.hpp"
 #include "graphics/core/Texture.hpp"
 #include "settings.hpp"
-#include "window/detail/input_sdl.hpp"
+#include "window/detail/SDLInput.hpp"
 
 static debug::Logger logger("window");
 
