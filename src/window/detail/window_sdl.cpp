@@ -141,7 +141,7 @@ static bool initialize_gl(int width, int height) {
     return true;
 }
 
-window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
+SDLWindow::SDLWindow(DisplaySettings *settings, std::string title) noexcept {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         logger.error() << "failed to initialize SDL: " << SDL_GetError();
         isSuccessfull = false;
@@ -217,7 +217,7 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
 
     logger.info() << "monitor content scale: " << scale;
 }
-window_sdl::~window_sdl() {
+SDLWindow::~SDLWindow() {
     if (window) {
         SDL_DestroyWindow(window);
     }
@@ -228,32 +228,32 @@ window_sdl::~window_sdl() {
     }
 }
 
-void window_sdl::swapBuffers() noexcept {
+void SDLWindow::swapBuffers() noexcept {
     if (!SDL_GL_SwapWindow(window)) [[unlikely]] {  // C++20 needed
         logger.error() << "Cant swap buffer: " << SDL_GetError();
     }
     resetScissor();
 }
-bool window_sdl::isMaximized() const {
+bool SDLWindow::isMaximized() const {
     return (SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED) != 0;
 }
-bool window_sdl::isFocused() const {
+bool SDLWindow::isFocused() const {
     Uint32 flags = SDL_GetWindowFlags(window);
     return (flags & SDL_WINDOW_INPUT_FOCUS) != 0 ||
            (flags & SDL_WINDOW_MOUSE_FOCUS) != 0;
 }
-bool window_sdl::isIconified() const {
+bool SDLWindow::isIconified() const {
     return (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) != 0;
 }
 
-bool window_sdl::isShouldClose() const {
+bool SDLWindow::isShouldClose() const {
     return toClose;
 }
-void window_sdl::setShouldClose(bool flag) {
+void SDLWindow::setShouldClose(bool flag) {
     toClose = flag;
 }
 
-void window_sdl::setCursor(CursorShape shape) {
+void SDLWindow::setCursor(CursorShape shape) {
     // so it method called each frame, we always recreate cursor.
     // Refactor it
     if (cursor) {
@@ -318,7 +318,7 @@ void window_sdl::setCursor(CursorShape shape) {
         SDL_SetCursor(cursor);
     }
 }
-void window_sdl::toggleFullscreen() {
+void SDLWindow::toggleFullscreen() {
     fullscreen = !fullscreen;
     if (!SDL_SetWindowFullscreen(window, fullscreen)) {
         logger.error() << "Cant toggle fullscreen window: " << SDL_GetError();
@@ -328,11 +328,11 @@ void window_sdl::toggleFullscreen() {
                        << SDL_GetError();
     }
 }
-bool window_sdl::isFullscreen() const {
+bool SDLWindow::isFullscreen() const {
     return fullscreen;
 }
 
-void window_sdl::setIcon(const ImageData *image) {
+void SDLWindow::setIcon(const ImageData *image) {
     if (image == nullptr) {
         logger.error() << "Image is nullptr";
         return;
@@ -361,7 +361,7 @@ void window_sdl::setIcon(const ImageData *image) {
     SDL_DestroySurface(iconSurface);
 }
 
-void window_sdl::pushScissor(glm::vec4 area) {
+void SDLWindow::pushScissor(glm::vec4 area) {
     if (scissorStack.empty()) {
         glEnable(GL_SCISSOR_TEST);
     }
@@ -389,13 +389,13 @@ void window_sdl::pushScissor(glm::vec4 area) {
     scissorArea = area;
 }
 
-void window_sdl::resetScissor() {
+void SDLWindow::resetScissor() {
     scissorArea = glm::vec4(0.0f, 0.0f, size.x, size.y);
     scissorStack = std::stack<glm::vec4>();
     glDisable(GL_SCISSOR_TEST);
 }
 
-void window_sdl::popScissor() {
+void SDLWindow::popScissor() {
     if (scissorStack.empty()) {
         logger.warning() << "extra Window::popScissor call";
         return;
@@ -418,11 +418,11 @@ void window_sdl::popScissor() {
     scissorArea = area;
 }
 
-double window_sdl::time() {
+double SDLWindow::time() {
     return static_cast<double>(SDL_GetTicksNS()) / 1'000'000'000;
 }
 
-void window_sdl::setFramerate(int framerate) {
+void SDLWindow::setFramerate(int framerate) {
     /*todo*/
     if (!SDL_GL_SetSwapInterval(framerate)) {
         logger.error() << "Failed to set framerate: " << SDL_GetError();
@@ -431,7 +431,7 @@ void window_sdl::setFramerate(int framerate) {
 
 // todo: move somewhere
 // Possible do with SDL_RenderReadPixels
-std::unique_ptr<ImageData> window_sdl::takeScreenshot() {
+std::unique_ptr<ImageData> SDLWindow::takeScreenshot() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     auto data = std::make_unique<ubyte[]>(size.x * size.y * 3);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -441,17 +441,17 @@ std::unique_ptr<ImageData> window_sdl::takeScreenshot() {
     );
 }
 
-[[nodiscard]] bool window_sdl::isValid() const {
+[[nodiscard]] bool SDLWindow::isValid() const {
     return isSuccessfull;
 }
-[[nodiscard]] SDL_Window *window_sdl::getSdlWindow() const {
+[[nodiscard]] SDL_Window *SDLWindow::getSdlWindow() const {
     return window;
 }
 
 std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>> Window::initialize(
     DisplaySettings *settings, std::string title
 ) {
-    auto window = std::make_unique<window_sdl>(settings, title);
+    auto window = std::make_unique<SDLWindow>(settings, title);
     if (!window->isValid()) {
         return {nullptr, nullptr};
     }

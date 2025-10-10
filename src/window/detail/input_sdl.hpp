@@ -3,7 +3,7 @@
 #include "window/input.hpp"
 #include "window/window.hpp"
 
-class window_sdl;
+class SDLWindow;
 
 class input_sdl final : public Input {
 public:
@@ -11,7 +11,7 @@ public:
     inline static constexpr short keys_buffer_size =
         mouse_keys_offset + sizeof(mousecodes_all) / sizeof(mousecodes_all[0]);
 
-    input_sdl(window_sdl& window);
+    input_sdl(SDLWindow& window);
 
     void pollEvents() override;
 
@@ -53,5 +53,5 @@ private:
     std::vector<Keycode> pressedKeys;
     std::unordered_map<Keycode, util::HandlersList<>> keyCallbacks;
 
-    window_sdl& window;
+    SDLWindow& window;
 };

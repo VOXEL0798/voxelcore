@@ -5,14 +5,14 @@
 
 #include "window/window.hpp"
 
-class window_sdl final : public Window {
+class SDLWindow final : public Window {
 public:
-    window_sdl(DisplaySettings *settings, std::string title) noexcept;
-    ~window_sdl();
-    window_sdl(const window_sdl &) = delete;
-    window_sdl(window_sdl &&) = default;
-    window_sdl &operator=(const window_sdl &) = delete;
-    window_sdl &operator=(window_sdl &&) = default;
+    SDLWindow(DisplaySettings *settings, std::string title) noexcept;
+    ~SDLWindow();
+    SDLWindow(const SDLWindow &) = delete;
+    SDLWindow(SDLWindow &&) = default;
+    SDLWindow &operator=(const SDLWindow &) = delete;
+    SDLWindow &operator=(SDLWindow &&) = default;
 
     void swapBuffers() noexcept override;
 

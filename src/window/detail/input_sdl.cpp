@@ -119,7 +119,7 @@ Mousecode input_util::mousecode_from(const std::string& name) {
     return static_cast<Mousecode>(found->second);
 }
 
-input_sdl::input_sdl(window_sdl& window) : window(window) {
+input_sdl::input_sdl(SDLWindow& window) : window(window) {
     input_util::initialize();
     // We should always get char stream (maybe)
     SDL_StartTextInput(window.getSdlWindow());
