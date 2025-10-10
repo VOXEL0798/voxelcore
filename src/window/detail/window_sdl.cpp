@@ -148,9 +148,7 @@ window_sdl::window_sdl(DisplaySettings *settings, std::string title) noexcept {
         return;
     }
 
-    SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-                            // For process mouse clicks when not focused
-                            SDL_WINDOW_NOT_FOCUSABLE;
+    SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
 
     if (settings->fullscreen.get()) {
         flags |= SDL_WINDOW_FULLSCREEN;
