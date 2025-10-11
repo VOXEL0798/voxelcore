@@ -4,7 +4,6 @@
 
 #include "Container.hpp"
 #include "graphics/core/Batch2D.hpp"
-#include "graphics/ui/GUI.hpp"
 
 using gui::UINode;
 using gui::Align;

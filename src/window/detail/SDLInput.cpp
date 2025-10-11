@@ -233,11 +233,9 @@ void SDLInput::setClipboardText(const char* text) {
 }
 
 void SDLInput::startTextInput() {
-    logger.debug() << "Start text input";
     SDL_StartTextInput(window.getSdlWindow());
 }
 void SDLInput::stopTextInput() {
-    logger.debug() << "Stop text input";
     SDL_StopTextInput(window.getSdlWindow());
 }
 
