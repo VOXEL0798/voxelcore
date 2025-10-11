@@ -1,7 +1,7 @@
 #include <SDL3/SDL_keycode.h>
 
-#include "window/input.hpp"
 #include "window/Window.hpp"
+#include "window/input.hpp"
 
 class SDLWindow;
 
@@ -17,6 +17,9 @@ public:
 
     const char* getClipboardText() const override;
     void setClipboardText(const char* str) override;
+
+    void startTextInput() override;
+    void stopTextInput() override;
 
     int getScroll() override;
 

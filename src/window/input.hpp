@@ -258,6 +258,9 @@ public:
     virtual const char* getClipboardText() const = 0;
     virtual void setClipboardText(const char* str) = 0;
 
+    virtual void startTextInput() = 0;
+    virtual void stopTextInput() = 0;
+
     virtual int getScroll() = 0;
 
     virtual bool pressed(Keycode keycode) const = 0;

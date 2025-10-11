@@ -121,8 +121,6 @@ Mousecode input_util::mousecode_from(const std::string& name) {
 
 SDLInput::SDLInput(SDLWindow& window) : window(window) {
     input_util::initialize();
-    // We should always get char stream (maybe)
-    SDL_StartTextInput(window.getSdlWindow());
 }
 
 void SDLInput::pollEvents() {
@@ -232,6 +230,15 @@ const char* SDLInput::getClipboardText() const {
 
 void SDLInput::setClipboardText(const char* text) {
     SDL_SetClipboardText(text);
+}
+
+void SDLInput::startTextInput() {
+    logger.debug() << "Start text input";
+    SDL_StartTextInput(window.getSdlWindow());
+}
+void SDLInput::stopTextInput() {
+    logger.debug() << "Stop text input";
+    SDL_StopTextInput(window.getSdlWindow());
 }
 
 int SDLInput::getScroll() {

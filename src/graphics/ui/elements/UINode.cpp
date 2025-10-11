@@ -4,6 +4,7 @@
 
 #include "Container.hpp"
 #include "graphics/core/Batch2D.hpp"
+#include "graphics/ui/GUI.hpp"
 
 using gui::UINode;
 using gui::Align;
@@ -107,11 +108,13 @@ bool UINode::isPressed() const {
 }
 
 void UINode::onFocus() {
+    gui.getInput().startTextInput();
     focused = true;
     focusCallbacks.notify(gui);
 }
 
 void UINode::defocus() {
+    gui.getInput().stopTextInput();
     focused = false;
     defocusCallbacks.notify(gui);
 }
